@@ -1,27 +1,24 @@
-{
-  "background_color": "#ffffff",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "Meu Pomar Inteligente",
-  "description": "Sistema de Gestão Agrícola e Consórcios para o Extremo Sul da Bahia.",
-  "orientation": "any",
-  "scope": ".",
-  "short_name": "MeuPomar",
-  "start_url": ".",
-  "theme_color": "#ffffff",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
-  ],
-  "share_target": {
-    "method": "GET"
-  }
-}
+const CACHE_NAME = 'pomar-v1';
+const assets = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(assets);
+    })
+  );
+});
+
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(response => {
+      return response || fetch(e.request);
+    })
+  );
+});
