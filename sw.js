@@ -1,24 +1,35 @@
-const CACHE_NAME = 'pomar-v1';
-const assets = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+// Nome do cache
+const CACHE_NAME = 'meu-pomar-cache-v1';
+// Arquivos que você quer armazenar offline
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/style.css',   // se tiver
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(assets);
-    })
+// Evento install
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
   );
 });
 
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(response => {
-      return response || fetch(e.request);
-    })
+// Evento activate
+self.addEventListener('activate', event => {
+  console.log('Service Worker ativado');
+});
+
+// Evento fetch (intercepta requisições)
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        return response || fetch(event.request);
+      })
   );
 });
