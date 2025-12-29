@@ -1,0 +1,682 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Pomar Baiano</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        .btn { @apply w-full text-center text-lg font-bold py-4 px-6 rounded-lg shadow-md transition-transform duration-200 ease-in-out hover:scale-[1.02] focus:outline-none focus:ring-4; }
+        .btn-green { @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-300; }
+        .btn-yellow { @apply bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-300; }
+        .btn-blue { @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-300; }
+        .btn-gray { @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-400; }
+        .input-field { @apply w-full border-2 border-gray-400 p-3 text-lg rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    </style>
+</head>
+<body class="bg-stone-100 text-gray-900 font-sans dark:bg-black dark:text-gray-100">
+    <header class="bg-green-800 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center dark:bg-green-900">
+        <h1 class="text-2xl font-bold text-center flex-grow">🌿 Meu Pomar</h1>
+        <button id="theme-toggle" class="btn-gray font-mono text-2xl !w-auto !py-2 !px-3 rounded-full"></button>
+    </header>
+
+    <main class="max-w-2xl mx-auto p-4 space-y-8">
+        <section class="bg-white p-6 rounded-lg shadow-lg dark:bg-gray-800 space-y-4">
+            <h2 class="text-xl font-bold text-green-700 border-b pb-2 dark:text-green-300 dark:border-gray-600">🌱 Adicionar Novo Plantio</h2>
+            <form id="plantio-form" class="space-y-4">
+                <input type="text" id="nome-planta" list="lista-plantas" class="input-field" placeholder="Qual planta?" required>
+                <datalist id="lista-plantas"></datalist>
+                
+                <input type="date" id="data-plantio" class="input-field" required>
+
+                <div class="p-4 rounded-lg border-2 border-gray-400 dark:border-gray-600 space-y-2">
+                    <h3 class="font-bold">Detalhes do Plantio</h3>
+                     <input type="number" id="quantidade-mudas" class="input-field !text-base" placeholder="Nº de pés/mudas" required>
+                    <label class="flex items-center"><input type="checkbox" id="usou-calcario" class="w-5 h-5 mr-2"> Usou Calcário?</label>
+                    <select id="tipo-npk-plantio" class="input-field !text-base">
+                        <option value="" disabled selected>Tipo de NPK (se usou)</option>
+                        <option value="10-10-10">10-10-10</option>
+                        <option value="04-14-08">04-14-08</option>
+                        <option value="20-00-20">20-00-20</option>
+                        <option value="04-30-10">04-30-10</option>
+                        <option value="12-06-12">12-06-12</option>
+                    </select>
+                    <input type="number" id="gramas-npk-plantio" class="input-field !text-base" placeholder="Gramas de NPK por cova/pé">
+                </div>
+                
+                <button type="submit" class="btn btn-green">✅ Salvar Plantio</button>
+            </form>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-bold mb-4 text-green-800 dark:text-green-300">📋 Cronograma de Manejo</h2>
+            <div id="lista-cards" class="space-y-4"></div>
+        </section>
+        
+        <section>
+            <h2 class="text-xl font-bold mb-4 text-green-800 dark:text-green-300">📊 Histórico de Safras</h2>
+            <div id="historico-safras" class="space-y-4"></div>
+        </section>
+        
+        <section class="bg-white p-6 rounded-lg shadow-lg dark:bg-gray-800 space-y-4">
+             <h2 class="text-xl font-bold text-blue-700 border-b pb-2 dark:text-blue-300 dark:border-gray-600">🔐 Segurança</h2>
+             <button id="backup-btn" class="btn btn-blue">💾 Salvar Cópia do Diário</button>
+             <div id="backup-area" class="hidden space-y-2">
+                <p class="text-sm">Copie este código e guarde em um lugar seguro!</p>
+                <textarea id="backup-code" readonly class="w-full h-24 p-3 font-mono text-xs border-2 rounded-lg bg-gray-100 border-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:text-white"></textarea>
+                <button id="copy-whatsapp-btn" class="btn !bg-teal-500 text-white hover:!bg-teal-600 focus:ring-teal-300">🔗 Enviar no WhatsApp</button>
+             </div>
+             <div class="pt-4 border-t dark:border-gray-600 space-y-2">
+                 <h3 class="font-bold">Recuperar meu Pomar</h3>
+                 <textarea id="restore-code" placeholder="Cole o código de segurança (Base64) aqui..." class="w-full h-24 p-3 font-mono text-xs border-2 rounded-lg border-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:text-white"></textarea>
+                 <button id="restore-btn" class="btn btn-green">🔄 Recuperar Dados</button>
+             </div>
+        </section>
+    </main>
+
+    <!-- Modal de Colheita -->
+    <div id="colheita-modal" class="modal-overlay hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md dark:bg-gray-800 space-y-4">
+            <h3 id="colheita-modal-title" class="text-xl font-bold">Registrar Colheita</h3>
+            <form id="colheita-form" class="space-y-4">
+                <input type="hidden" id="colheita-entry-id">
+                <input type="number" step="0.1" id="colheita-qtd" class="input-field" placeholder="Quanto colheu?" required>
+                <select id="colheita-unidade" class="input-field"><option>kg</option><option>sacas</option><option>unidades</option><option>arrobas</option></select>
+                <input type="date" id="colheita-data" class="input-field" required>
+                <div class="mt-2 flex flex-col sm:flex-row gap-3">
+                    <button type="button" id="cancelar-colheita" class="btn !bg-gray-300 !text-black hover:!bg-gray-400 focus:ring-gray-200">Cancelar</button>
+                    <button type="submit" class="btn btn-yellow">📦 Salvar Colheita</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Adubação -->
+    <div id="adubo-modal" class="modal-overlay hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md dark:bg-gray-800 space-y-4">
+            <h3 id="adubo-modal-title" class="text-xl font-bold">Registrar Aplicação</h3>
+            <form id="adubo-form" class="space-y-4">
+                <input type="hidden" id="adubo-entry-id">
+                <input type="hidden" id="adubo-tipo">
+                <div>
+                    <label for="adubo-data" class="block text-sm font-medium">Data da Aplicação</label>
+                    <input type="date" id="adubo-data" class="input-field mt-1" required>
+                </div>
+                <div class="mt-2 flex flex-col sm:flex-row-reverse gap-3">
+                    <button type="submit" class="btn btn-green">Salvar</button>
+                    <button type="button" id="cancelar-adubo" class="btn !bg-gray-300 !text-black hover:!bg-gray-400 focus:ring-gray-200">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <footer class="text-center text-xs text-gray-500 py-4 dark:text-gray-400">
+        <p>Dados salvos localmente no seu dispositivo.</p>
+    </footer>
+
+    <script>
+        const CROP_MANAGEMENT_PROFILES = {
+            "Abacate": {
+                type: 'frutifera', emoji: "🥑", info: { espacamento: "8m x 8m.", tip: "Manter raio de 4m livre de outras árvores. Garanta boa drenagem do solo." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '04-14-08', dosage: 150 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 400 }, adulta: { active: true, npk_formula: '04-14-08', dosage: 800 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 5000 }, adulta: { active: true, dosage: 10000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { muda: { active: true, dosage: 150 }, jovem: { active: true, dosage: 300 }, adulta: { active: true, dosage: 500 } } },
+                    { name: 'Biofertilizante', emoji: '💧', cycle: 15, offset: 7, stage_rules: { muda: { active: true, dosage: 'Foliar' }, jovem: { active: true, dosage: 'Foliar' }, adulta: { active: true, dosage: 'Foliar' } } },
+                ]
+            },
+            "Abacaxi": {
+                type: 'hortalica_fruto', emoji: "🍍", info: { espacamento: "0,30m x 0,90m.", tip: "Ótimo para plantar nas bordas ou em 'ruas' entre frutíferas maiores." },
+                stages: { crescimento: { days: 365, label: "Crescimento" }, producao: { days: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Plantio', emoji: '💎', cycle: 9999, offset: 1, stage_rules: { crescimento: { active: true, npk_formula: '04-14-08', dosage: 30, reason: 'No plantio' } } },
+                    { name: 'NPK Cobertura', emoji: '💎', cycle: 90, offset: 60, stage_rules: { crescimento: { active: true, npk_formula: '12-06-12', dosage: 50 }, producao: { active: true, npk_formula: '12-06-12', dosage: 80 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { crescimento: { active: true, dosage: 1000 }, producao: { active: true, dosage: 2000 } } },
+                    { name: 'Biofertilizante', emoji: '💧', cycle: 15, offset: 7, stage_rules: { crescimento: { active: true, dosage: 'Foliar' }, producao: { active: true, dosage: 'Foliar' } } }
+                ]
+            },
+            "Abóbora": {
+                type: 'hortalica_fruto', emoji: "🎃", info: { espacamento: "3m x 3m.", tip: "Manter 4-5m de distância de árvores para as ramas terem sol total." },
+                stages: { fundacao: { days: 20, label: "Fundação" }, rama: { days: 45, label: "Rama" }, fruto: { days: Infinity, label: "Fruto" } },
+                schedule: [
+                     { name: 'NPK Mineral', emoji: '💎', cycle: 20, offset: 15, stage_rules: { fundacao: { active: true, npk_formula: '04-14-08', dosage: 50 }, rama: { active: true, npk_formula: '20-00-20', dosage: 100 }, fruto: { active: true, npk_formula: '00-00-60', dosage: 150 } } },
+                     { name: 'Biofertilizante', emoji: '💧', cycle: 15, offset: 7, stage_rules: { fundacao: { active: true, dosage: 'Foliar' }, rama: { active: true, dosage: 'Foliar' }, fruto: { active: true, dosage: 'Foliar' } } },
+                ]
+            },
+            "Araçá": {
+                type: 'frutifera', emoji: "🍈", info: { espacamento: "4m x 4m.", tip: "Gosta de solo úmido, típica de clima tropical. 'Araçá Paulista'." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '10-10-10', dosage: 80 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 250 }, adulta: { active: true, npk_formula: '10-10-10', dosage: 500 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 1500 }, jovem: { active: true, dosage: 4000 }, adulta: { active: true, dosage: 8000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { jovem: { active: true, dosage: 200 }, adulta: { active: true, dosage: 400 } } },
+                    { name: 'Cinzas', emoji: '🔥', cycle: 180, offset: 180, stage_rules: { adulta: { active: true, dosage: 200, reason: 'Potássio p/ Frutos' } } }
+                ]
+            },
+            "Banana": {
+                type: 'frutifera_ciclo_curto', emoji: "🍌", info: { espacamento: "2m x 3m.", tip: "Pode ser plantada a 1,5m de plantas nativas para servir de sombra." },
+                stages: { muda: { months: 4, label: "Muda/Crescimento" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 45, offset: 30, stage_rules: { muda: { active: true, npk_formula: '10-10-10', dosage: 150 }, adulta: { active: true, npk_formula: '04-14-08', dosage: 300 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, adulta: { active: true, dosage: 5000 } } },
+                    { name: 'Cinzas', emoji: '🔥', cycle: 90, offset: 60, stage_rules: { adulta: { active: true, dosage: 200 } } }
+                ]
+            },
+             "Banana da Terra": {
+                type: 'frutifera_ciclo_curto', emoji: "🍌", info: { espacamento: "3m x 3m.", tip: "Exige escoramento do cacho e desbaste rigoroso (Mãe, Filha, Neta)." },
+                stages: { muda: { months: 6, label: "Muda/Crescimento" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 60, offset: 45, stage_rules: { muda: { active: true, npk_formula: '10-10-10', dosage: 200 }, adulta: { active: true, npk_formula: '00-00-60', dosage: 300 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 3000 }, adulta: { active: true, dosage: 6000 } } },
+                    { name: 'Cinzas', emoji: '🔥', cycle: 90, offset: 75, stage_rules: { adulta: { active: true, dosage: 300, reason: 'Fonte de Potássio' } } }
+                ]
+            },
+            "Cacau": {
+                type: 'frutifera', emoji: "🍫", info: { espacamento: "3m x 3m.", tip: "Plantar Banana/Mandioca no meio da rua (a 1,5m do cacau) para sombra." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '04-14-08', dosage: 100 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 300 }, adulta: { active: true, npk_formula: '12-06-12', dosage: 600 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 5000 }, adulta: { active: true, dosage: 10000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { muda: { active: true, dosage: 100 }, jovem: { active: true, dosage: 250 }, adulta: { active: true, dosage: 500 } } },
+                    { name: 'Biofertilizante', emoji: '💧', cycle: 15, offset: 7, stage_rules: { muda: { active: true, dosage: 'Foliar' }, jovem: { active: true, dosage: 'Foliar' }, adulta: { active: true, dosage: 'Foliar' } } },
+                    { name: 'Cinzas', emoji: '🔥', cycle: 180, offset: 180, stage_rules: { adulta: { active: true, dosage: 200 } } }
+                ]
+            },
+            "Café (Conilon)": {
+                type: 'frutifera', emoji: "☕", info: { espacamento: "3m x 1m.", tip: "Gosta de sombreamento leve, pode ser consorciado com árvores nativas." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Crescimento" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '04-14-08', dosage: 80 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 250 }, adulta: { active: true, npk_formula: '12-06-12', dosage: 500 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 1500 }, jovem: { active: true, dosage: 4000 }, adulta: { active: true, dosage: 8000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { jovem: { active: true, dosage: 200 }, adulta: { active: true, dosage: 400 } } },
+                ]
+            },
+            "Cana-de-açúcar": {
+                type: 'graminea_colmo', emoji: "🎋", info: { espacamento: "1m entre sulcos.", tip: "Pode ser usada como quebra-vento nas extremidades do terreno." },
+                stages: { ciclo: { days: 540, label: "Ciclo Completo" } },
+                schedule: [
+                    { name: 'NPK Fundo', emoji: '💎', cycle: 9999, offset: 1, stage_rules: { ciclo: { active: true, npk_formula: '04-14-08', dosage: '30g/m', reason: 'No sulco' } } },
+                    { name: 'NPK Cobertura', emoji: '💎', cycle: 90, offset: 60, stage_rules: { ciclo: { active: true, npk_formula: '20-00-20', dosage: '20g/m' } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 180, offset: 15, stage_rules: { ciclo: { active: true, dosage: '2kg/m' } } }
+                ]
+            },
+            "Citros (Limão/Laranja/Tangerina)": {
+                type: 'frutifera', emoji: "🍋", info: { espacamento: "4m x 6m.", tip: "Necessitam de micronutrientes (Zinco/Boro) anualmente na produção." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '04-14-08', dosage: 100 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 400 }, adulta: { active: true, npk_formula: '12-06-12', dosage: 800 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 5000 }, adulta: { active: true, dosage: 10000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { jovem: { active: true, dosage: 250 }, adulta: { active: true, dosage: 500 } } },
+                ]
+            },
+            "Coco": {
+                type: 'frutifera', emoji: "🥥", info: { espacamento: "7m x 7m (triangular).", tip: "Plantar culturas baixas (melancia/abóbora) a 3,5m do tronco." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '04-14-08', dosage: 200 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 800 }, adulta: { active: true, npk_formula: '12-00-12', dosage: 1500 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 5000 }, adulta: { active: true, dosage: 10000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { muda: { active: true, dosage: 100 }, jovem: { active: true, dosage: 250 }, adulta: { active: true, dosage: 500 } } },
+                ]
+            },
+            "Cupuaçu": {
+                type: 'frutifera', emoji: "🌰", info: { espacamento: "6m x 6m.", tip: "Gosta de umidade e sombreamento, ideal para consórcio com Cacau." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '10-10-10', dosage: 100 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 300 }, adulta: { active: true, npk_formula: '10-10-10', dosage: 600 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 5000 }, adulta: { active: true, dosage: 10000 } } },
+                ]
+            },
+            "Feijão": {
+                type: 'anual_grao', emoji: "🫘", info: { espacamento: "0,5m x 0,1m.", tip: "Ótimo para fixar Nitrogênio no solo para as frutíferas." },
+                stages: { ciclo: { days: 90, label: "Ciclo Completo" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 1, stage_rules: { ciclo: { active: true, npk_formula: '04-14-08', dosage: '25g/m', reason: 'No sulco' } } }
+                ]
+            },
+            "Goiaba": {
+                type: 'frutifera', emoji: "🍈", info: { espacamento: "5m x 5m.", tip: "Poda de frutificação é essencial após a colheita para boa produção." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '10-10-10', dosage: 100 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 300 }, adulta: { active: true, npk_formula: '10-10-10', dosage: 600 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 5000 }, adulta: { active: true, dosage: 10000 } } },
+                ]
+            },
+            "Graviola": {
+                type: 'frutifera', emoji: "🍈", info: { espacamento: "4m x 4m.", tip: "Cultura típica da Bahia, exige solo bem drenado para evitar doenças." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '10-10-10', dosage: 100 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 300 }, adulta: { active: true, npk_formula: '10-10-10', dosage: 600 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 5000 }, adulta: { active: true, dosage: 10000 } } },
+                ]
+            },
+            "Mamão": {
+                type: 'frutifera_ciclo_curto', emoji: "🥭", info: { espacamento: "3m x 2m (Formosa/Hawaii).", tip: "Requer adubação mensal para alta produção." },
+                stages: { ciclo: { months: 24, label: "Ciclo Produtivo" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 30, offset: 30, stage_rules: { ciclo: { active: true, npk_formula: '10-10-10', dosage: 150 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { ciclo: { active: true, dosage: 3000 } } },
+                ]
+            },
+            "Mandioca": {
+                type: 'hortalica_raiz', emoji: "🥔", info: { espacamento: "1m x 1m.", tip: "Consórcio entre linhas de Cacau jovem (a 1,5m de distância)." },
+                stages: { ciclo: { days: 365, label: "Ciclo Completo" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 365, offset: 1, stage_rules: { ciclo: { active: true, npk_formula: '04-14-08', dosage: 100, reason: 'No plantio' } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 365, offset: 1, stage_rules: { ciclo: { active: true, dosage: 2000, reason: 'Na cova' } } },
+                ]
+            },
+            "Manga": {
+                type: 'frutifera', emoji: "🥭", info: { espacamento: "8m x 8m.", tip: "Manter raio de 4m livre de outras árvores grandes para o consórcio." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '04-14-08', dosage: 100 }, jovem: { active: true, npk_formula: '10-10-10', dosage: 500 }, adulta: { active: true, npk_formula: '04-14-08', dosage: 1000 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, jovem: { active: true, dosage: 6000 }, adulta: { active: true, dosage: 10000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { muda: { active: true, dosage: 100 }, jovem: { active: true, dosage: 300 }, adulta: { active: true, dosage: 500 } } },
+                    { name: 'Cinzas', emoji: '🔥', cycle: 180, offset: 180, stage_rules: { adulta: { active: true, dosage: 250, reason: 'Potássio p/ Frutos' } } }
+                ]
+            },
+            "Maracujá": {
+                type: 'trepadeira_fruto', emoji: "🍈", info: { espacamento: "3m entre plantas (espaldeira).", tip: "Exige polinização manual ou presença de mamangavas." },
+                stages: { muda: { months: 4, label: "Muda" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 60, offset: 45, stage_rules: { muda: { active: true, npk_formula: '04-14-08', dosage: 100 }, adulta: { active: true, npk_formula: '12-06-12', dosage: 300 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 2000 }, adulta: { active: true, dosage: 5000 } } },
+                    { name: 'Farinha de Osso', emoji: '🦴', cycle: 120, offset: 60, stage_rules: { adulta: { active: true, dosage: 250 } } },
+                ]
+            },
+            "Melancia": {
+                type: 'hortalica_fruto', emoji: "🍉", info: { espacamento: "2m x 2m.", tip: "Manter 4-5m de distância de árvores para as ramas terem sol total." },
+                stages: { fundacao: { days: 20, label: "Fundação" }, rama: { days: 45, label: "Rama" }, fruto: { days: Infinity, label: "Fruto" } },
+                schedule: [
+                     { name: 'NPK Mineral', emoji: '💎', cycle: 20, offset: 15, stage_rules: { fundacao: { active: true, npk_formula: '04-14-08', dosage: 30 }, rama: { active: true, npk_formula: '20-00-20', dosage: 50 }, fruto: { active: true, npk_formula: '00-00-60', dosage: 50 } } },
+                     { name: 'Biofertilizante', emoji: '💧', cycle: 15, offset: 7, stage_rules: { fundacao: { active: true, dosage: 'Foliar' }, rama: { active: true, dosage: 'Foliar' }, fruto: { active: true, dosage: 'Foliar' } } },
+                ]
+            },
+            "Milho": {
+                type: 'anual_grao', emoji: "🌽", info: { espacamento: "1m x 0,20m.", tip: "Plantar em fileiras para facilitar a polinização pelo vento." },
+                stages: { ciclo: { days: 120, label: "Ciclo Completo" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 120, offset: 20, stage_rules: { ciclo: { active: true, npk_formula: '10-10-10', dosage: '20g/m' } } },
+                    { name: 'Ureia', emoji: '💧', cycle: 120, offset: 40, stage_rules: { ciclo: { active: true, dosage: '10g/m' } } }
+                ]
+            },
+            "Pimenta-do-reino": {
+                type: 'trepadeira_especiaria', emoji: "🌶️", info: { espacamento: "2m x 2m (com tutor).", tip: "Alta rentabilidade para o sul da Bahia, exige bom manejo." },
+                stages: { muda: { months: 6, label: "Muda" }, jovem: { months: 24, label: "Jovem" }, adulta: { months: Infinity, label: "Produção" } },
+                schedule: [
+                    { name: 'NPK Mineral', emoji: '💎', cycle: 90, offset: 45, stage_rules: { muda: { active: true, npk_formula: '10-10-10', dosage: 80 }, jovem: { active: true, npk_formula: '12-06-12', dosage: 250 }, adulta: { active: true, npk_formula: '12-06-12', dosage: 500 } } },
+                    { name: 'Esterco/Húmus', emoji: '💩', cycle: 90, offset: 15, stage_rules: { muda: { active: true, dosage: 1500 }, jovem: { active: true, dosage: 4000 }, adulta: { active: true, dosage: 8000 } } },
+                ]
+            }
+        };
+
+        const STORAGE_KEY = 'meuPomarEntries_v10';
+        const HARVEST_STORAGE_KEY = 'meuPomarHarvests_v10';
+        
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const htmlEl = document.documentElement;
+        const setTheme = (theme) => { htmlEl.classList.toggle('dark', theme === 'dark'); themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙'; localStorage.setItem('theme', theme); };
+        themeToggleBtn.addEventListener('click', () => setTheme(localStorage.getItem('theme') === 'dark' ? 'light' : 'dark'));
+        setTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+        const getEntries = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        const saveEntries = (entries) => localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+        const getHarvests = () => JSON.parse(localStorage.getItem(HARVEST_STORAGE_KEY) || '[]');
+        const saveHarvests = (harvests) => localStorage.setItem(HARVEST_STORAGE_KEY, JSON.stringify(harvests));
+        
+        const parseLocalDate = (dateString) => new Date(dateString + 'T12:00:00');
+        const getLocalDateString = (date = new Date()) => date.toISOString().split('T')[0];
+        const calcularProximaData = (dataBase, dias) => { let d = parseLocalDate(dataBase); d.setDate(d.getDate() + dias); return d; };
+        
+        function getUpcomingTasks(entry) {
+            const profile = CROP_MANAGEMENT_PROFILES[entry.nome];
+            if (!profile) return [];
+
+            const today = new Date(); today.setHours(0,0,0,0);
+            const plantDate = parseLocalDate(entry.dataPlantio);
+            const ageInMonths = (today.getFullYear() - plantDate.getFullYear()) * 12 + (today.getMonth() - plantDate.getMonth());
+            const ageInDays = Math.floor((today - plantDate) / (1000 * 60 * 60 * 24));
+            
+            let currentStageKey = '';
+            const stageKeys = Object.keys(profile.stages);
+
+            if (profile.type.includes('frutifera') || profile.type.includes('trepadeira')) {
+                currentStageKey = stageKeys.find(key => ageInMonths <= profile.stages[key].months) || stageKeys[stageKeys.length - 1];
+            } else { // hortaliças, anuais, etc.
+                currentStageKey = stageKeys.find(key => ageInDays <= profile.stages[key].days) || stageKeys[stageKeys.length - 1];
+            }
+            
+            const tasks = [];
+            for (const taskTemplate of profile.schedule) {
+                const stage_rules = taskTemplate.stage_rules || {};
+                const stageRule = stage_rules[currentStageKey];
+
+                if (!stageRule || !stageRule.active) continue;
+
+                const history = entry.historicoAdubacao?.[taskTemplate.name] || [];
+                const lastApplication = history.slice(-1)[0];
+
+                let nextDate = lastApplication ? calcularProximaData(lastApplication, taskTemplate.cycle) : calcularProximaData(entry.dataPlantio, taskTemplate.offset);
+                
+                tasks.push({ 
+                    name: taskTemplate.name,
+                    emoji: taskTemplate.emoji,
+                    npk_formula: stageRule.npk_formula,
+                    proximaData: nextDate,
+                    dosagem: stageRule.dosage,
+                    reason: stageRule.reason,
+                    stage: profile.stages[currentStageKey].label
+                });
+            }
+            return tasks.sort((a, b) => a.proximaData - b.proximaData);
+        }
+
+        function registrarManejo(id, tipo, dataRegistro) {
+            let entries = getEntries();
+            const index = entries.findIndex(e => e.id == id);
+            if (index === -1) return;
+            const entry = entries[index];
+            if (!entry.historicoAdubacao) entry.historicoAdubacao = {};
+            if (!entry.historicoAdubacao[tipo]) entry.historicoAdubacao[tipo] = [];
+            entry.historicoAdubacao[tipo].push(dataRegistro);
+            entries[index] = entry;
+            saveEntries(entries);
+            renderAll();
+        }
+
+        const createCardHTML = (entry) => {
+            const profile = CROP_MANAGEMENT_PROFILES[entry.nome];
+            if (!profile) return `<div>Erro: Planta "${entry.nome}" não encontrada.</div>`;
+            
+            const tasks = getUpcomingTasks(entry);
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+            const tasksHTML = tasks.map(task => {
+                const diffTime = task.proximaData.getTime() - hoje.getTime();
+                const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                let cor = daysRemaining < 0 ? 'text-red-500 font-bold' : (daysRemaining <= 7 ? 'text-orange-500 font-bold' : '');
+                let statusText = daysRemaining > 0 ? `${daysRemaining} dias` : (daysRemaining < 0 ? `${Math.abs(daysRemaining)} dias atrás` : 'HOJE');
+
+                let dosageText = '';
+                if (typeof task.dosagem === 'number') {
+                    const val = task.dosagem >= 1000 ? `${task.dosagem / 1000}kg` : `${task.dosagem}g`;
+                    dosageText = `<strong>${val}</strong> por pé`;
+                } else {
+                    dosageText = `<strong>${task.dosagem}</strong>`;
+                }
+
+                const taskTitle = task.npk_formula ? `${task.name} ${task.npk_formula}` : task.name;
+                const reasonText = task.reason ? ` - ${task.reason}` : '';
+
+                return `
+                <li class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-2 rounded-md ${daysRemaining < 0 ? 'bg-red-100 dark:bg-red-900/50' : 'bg-gray-100 dark:bg-gray-700'}">
+                    <div class="flex-grow">
+                        <span class="font-bold">${task.emoji} ${taskTitle}</span>
+                        <p class="text-sm ${cor}">${task.proximaData.toLocaleDateString('pt-BR')} (${statusText})</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            ⚖️ Sugerido: ${dosageText} <br>
+                            <em>(${task.stage}${reasonText})</em>
+                        </p>
+                    </div>
+                    <button data-action="registrar-adubo" data-entry-id="${entry.id}" data-tipo="${task.name}" class="w-full sm:w-auto px-4 py-1 text-sm font-semibold rounded shadow-sm text-white bg-green-600 hover:bg-green-700">FEITO</button>
+                </li>`;
+            }).join('');
+
+            return `<div class="bg-white p-4 rounded-lg shadow-lg border-l-8 border-green-600 dark:bg-gray-800 dark:border-green-700" data-entry-id="${entry.id}">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">${profile.emoji} ${entry.nome}</h3>
+                    <button data-action="delete" data-entry-id="${entry.id}" class="text-2xl text-red-500 hover:text-red-700 transition-colors p-2 -mr-2 -mt-2">🗑️</button>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">${entry.quantidadeMudas} pés | Plantado em: ${parseLocalDate(entry.dataPlantio).toLocaleDateString('pt-BR')}</p>
+                
+                <div class="mt-3 p-3 border rounded-md bg-gray-50 dark:bg-gray-900/50 dark:border-gray-600 space-y-1 text-sm">
+                    <p><strong>📏 Espaçamento Ideal:</strong> ${profile.info.espacamento}</p>
+                    <p><strong>💡 Orientação de Plantio:</strong> ${profile.info.tip}</p>
+                </div>
+
+                <div class="mt-3 border-t-2 pt-2 dark:border-gray-600">
+                    <h4 class="text-md font-semibold mb-2 text-green-800 dark:text-green-300">Próximas Tarefas</h4>
+                    <ul class="space-y-2">${tasksHTML || '<p class="text-sm text-gray-500">Nenhuma tarefa futura calculada.</p>'}</ul>
+                </div>
+                <div class="mt-4"><button data-action="colher" data-entry-id="${entry.id}" class="btn btn-yellow">📦 Registrar Colheita</button></div>
+            </div>`;
+        };
+
+        const renderHarvests = () => {
+            const harvests = getHarvests();
+            const entries = getEntries();
+            const historicoContainer = document.getElementById('historico-safras');
+
+            if (harvests.length === 0) {
+                historicoContainer.innerHTML = `<p class="text-gray-500 text-center py-4 dark:text-gray-400">Nenhuma colheita registrada ainda.</p>`;
+                return;
+            }
+
+            const harvestsByEntry = harvests.reduce((acc, harvest) => {
+                (acc[harvest.entryId] = acc[harvest.entryId] || []).push(harvest);
+                return acc;
+            }, {});
+
+            const html = Object.entries(harvestsByEntry).map(([entryId, harvestList]) => {
+                const entry = entries.find(e => e.id == entryId);
+                if (!entry) return ''; // Entry might have been deleted
+
+                const profile = CROP_MANAGEMENT_PROFILES[entry.nome];
+                const sortedHarvests = harvestList.sort((a,b) => parseLocalDate(b.data) - parseLocalDate(a.data));
+                
+                const harvestItemsHTML = sortedHarvests.map(h => `
+                    <li class="flex justify-between items-center text-sm p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                        <span>${parseLocalDate(h.data).toLocaleDateString('pt-BR')}</span>
+                        <span class="font-bold">${h.quantidade} ${h.unidade}</span>
+                    </li>
+                `).join('');
+
+                return `
+                    <div class="bg-white p-4 rounded-lg shadow-md dark:bg-gray-800">
+                        <h3 class="text-lg font-bold mb-2">${profile.emoji} ${entry.nome}</h3>
+                        <ul class="space-y-2">${harvestItemsHTML}</ul>
+                    </div>
+                `;
+            }).join('');
+            
+            historicoContainer.innerHTML = html;
+        };
+        
+        const renderAll = () => {
+            document.getElementById('lista-cards').innerHTML = getEntries().sort((a,b) => parseLocalDate(b.dataPlantio) - parseLocalDate(a.dataPlantio)).map(createCardHTML).join('') || `<p class="text-gray-500 text-center py-4 dark:text-gray-400">Nenhum registro encontrado.</p>`;
+            renderHarvests();
+        };
+
+        document.getElementById('plantio-form').onsubmit = (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const nomePlanta = form['nome-planta'].value;
+            const plantaKey = Object.keys(CROP_MANAGEMENT_PROFILES).find(k => k.toLowerCase().trim() === nomePlanta.toLowerCase().trim());
+            if (!plantaKey) { alert('Planta não encontrada. Selecione uma da lista.'); return; }
+            const newEntry = {
+                id: Date.now(),
+                nome: plantaKey,
+                dataPlantio: form['data-plantio'].value,
+                quantidadeMudas: parseInt(form['quantidade-mudas'].value),
+                detalhesPlantio: { 
+                    usouCalcario: form['usou-calcario'].checked,
+                    tipoNpk: form['tipo-npk-plantio'].value,
+                    gramasNpk: form['gramas-npk-plantio'].value
+                },
+                historicoAdubacao: {}
+            };
+            saveEntries([newEntry, ...getEntries()]);
+            renderAll();
+            form.reset();
+            form['data-plantio'].value = getLocalDateString();
+        };
+
+        const aduboModal = document.getElementById('adubo-modal');
+        const aduboForm = document.getElementById('adubo-form');
+        function openAduboModal(entryId, tipo) {
+            aduboForm.reset();
+            aduboForm['adubo-entry-id'].value = entryId;
+            aduboForm['adubo-tipo'].value = tipo;
+            aduboForm['adubo-data'].value = getLocalDateString();
+            document.getElementById('adubo-modal-title').textContent = `Registrar ${tipo}`;
+            aduboModal.classList.remove('hidden');
+        }
+        function closeAduboModal() { aduboModal.classList.add('hidden'); }
+        document.getElementById('cancelar-adubo').onclick = closeAduboModal;
+        aduboForm.onsubmit = (e) => {
+            e.preventDefault();
+            registrarManejo(aduboForm['adubo-entry-id'].value, aduboForm['adubo-tipo'].value, aduboForm['adubo-data'].value);
+            closeAduboModal();
+        };
+        
+        document.getElementById('lista-cards').onclick = (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const { action, entryId, tipo } = btn.dataset;
+            
+            if (action === 'colher') {
+                openColheitaModal(entryId);
+            } else if (action === 'registrar-adubo') {
+                openAduboModal(entryId, tipo);
+            } else if (action === 'delete') {
+                if (confirm('Tem certeza que deseja excluir este plantio e todo o seu histórico?')) {
+                    const entries = getEntries();
+                    // CORRECTED: Ensure entryId is treated as a number for filtering
+                    const updatedEntries = entries.filter(entry => Number(entry.id) !== Number(entryId));
+                    saveEntries(updatedEntries);
+                    
+                    const harvests = getHarvests();
+                    // entryId from dataset is a string, and h.entryId was stored as a string. This comparison is correct.
+                    const updatedHarvests = harvests.filter(h => h.entryId !== entryId);
+                    saveHarvests(updatedHarvests);
+                    renderAll();
+                }
+            }
+        };
+        
+        // --- CÓDIGO DE COLHEITA, BACKUP E RESTORE ---
+
+        const colheitaModal = document.getElementById('colheita-modal');
+        const colheitaForm = document.getElementById('colheita-form');
+        const colheitaTitle = document.getElementById('colheita-modal-title');
+        
+        function openColheitaModal(entryId) {
+            const entry = getEntries().find(e => e.id == entryId);
+            if (!entry) return;
+            colheitaForm.reset();
+            colheitaForm['colheita-entry-id'].value = entryId;
+            colheitaForm['colheita-data'].value = getLocalDateString();
+            colheitaTitle.textContent = `Registrar Colheita de ${entry.nome}`;
+            colheitaModal.classList.remove('hidden');
+        }
+
+        function closeColheitaModal() {
+            colheitaModal.classList.add('hidden');
+        }
+
+        document.getElementById('cancelar-colheita').onclick = closeColheitaModal;
+
+        colheitaForm.onsubmit = (e) => {
+            e.preventDefault();
+            const newHarvest = {
+                id: Date.now(),
+                entryId: colheitaForm['colheita-entry-id'].value, // Stored as string
+                quantidade: parseFloat(colheitaForm['colheita-qtd'].value),
+                unidade: colheitaForm['colheita-unidade'].value,
+                data: colheitaForm['colheita-data'].value
+            };
+            const harvests = getHarvests();
+            saveHarvests([newHarvest, ...harvests]);
+            renderAll(); // CORRECTED: Changed from renderHarvests() to renderAll()
+            closeColheitaModal();
+        };
+
+        const backupBtn = document.getElementById('backup-btn');
+        const restoreBtn = document.getElementById('restore-btn');
+        const copyWhatsappBtn = document.getElementById('copy-whatsapp-btn');
+        const backupArea = document.getElementById('backup-area');
+        const backupCodeEl = document.getElementById('backup-code');
+        const restoreCodeEl = document.getElementById('restore-code');
+
+        backupBtn.onclick = () => {
+            try {
+                const backupData = {
+                    entries: getEntries(),
+                    harvests: getHarvests()
+                };
+                const jsonString = JSON.stringify(backupData);
+                // CORRECTED: Robust Base64 encoding for UTF-8 characters (like emojis)
+                const base64String = btoa(unescape(encodeURIComponent(jsonString)));
+                
+                backupCodeEl.value = base64String;
+                backupArea.classList.remove('hidden');
+                backupCodeEl.select();
+                
+                navigator.clipboard.writeText(base64String).then(() => {
+                    alert('Código de segurança (Base64) copiado para a área de transferência!');
+                }).catch(err => {
+                    console.error('Falha ao copiar:', err);
+                    alert('Não foi possível copiar automaticamente. Por favor, copie o código manualmente.');
+                });
+            } catch (error) {
+                console.error('Erro ao gerar backup:', error);
+                alert('Ocorreu um erro ao gerar o código de segurança.');
+            }
+        };
+
+        copyWhatsappBtn.onclick = () => {
+            const backupText = backupCodeEl.value;
+            if (!backupText) {
+                alert('Gere o código de segurança primeiro.');
+                return;
+            }
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(backupText)}`;
+            window.open(whatsappUrl, '_blank');
+        };
+
+        restoreBtn.onclick = () => {
+            const restoreCode = restoreCodeEl.value.trim();
+            if (!restoreCode) {
+                alert('Cole o código de segurança Base64 na caixa de texto.');
+                return;
+            }
+
+            if (!confirm('ATENÇÃO: Isso irá substituir TODOS os dados atuais. Deseja continuar?')) {
+                return;
+            }
+
+            try {
+                // CORRECTED: Robust Base64 decoding for UTF-8 characters (like emojis)
+                const jsonString = decodeURIComponent(escape(atob(restoreCode)));
+                const restoredData = JSON.parse(jsonString);
+
+                if (Array.isArray(restoredData.entries) && Array.isArray(restoredData.harvests)) {
+                    saveEntries(restoredData.entries);
+                    saveHarvests(restoredData.harvests);
+                    renderAll();
+                    restoreCodeEl.value = '';
+                    alert('Dados restaurados com sucesso!');
+                } else {
+                    throw new Error('Formato de dados inválido após decodificação.');
+                }
+            } catch (error) {
+                console.error('Erro na restauração:', error);
+                alert('Erro: O código de segurança parece ser inválido ou corrompido. Certifique-se de que é um código Base64 válido gerado por este app.');
+            }
+        };
+
+        // --- INICIALIZAÇÃO ---
+        document.getElementById('lista-plantas').innerHTML = Object.keys(CROP_MANAGEMENT_PROFILES).sort().map(p => `<option value="${p}"></option>`).join('');
+        document.getElementById('data-plantio').value = getLocalDateString();
+        renderAll();
+    </script>
+</body>
+</html>
