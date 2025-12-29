@@ -1,11 +1,24 @@
 {
-  "background_color": "#ffffff",
+  "name": "Meu Pomar Inteligente",
+  "short_name": "MeuPomar",
+  "description": "Gestão Agrícola e Consórcios - Porto Seguro",
   "dir": "ltr",
   "display": "standalone",
-  "name": "rdengenharia.github",
-  "orientation": "any",
+  "orientation": "portrait",
   "scope": "/",
-  "short_name": "rdengenharia.github",
-  "start_url": "/",
-  "theme_color": "#ffffff"
+  "start_url": "/index.html",
+  "background_color": "#121212",
+  "theme_color": "#2e7d32",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/192/2329/2329087.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2329/2329087.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
