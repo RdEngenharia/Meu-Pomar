@@ -1,26 +1,27 @@
 {
-  "name": "Meu Pomar Inteligente",
-  "short_name": "MeuPomar",
-  "description": "Gestão Agrícola e Consórcios - Porto Seguro",
+  "background_color": "#ffffff",
   "dir": "ltr",
   "display": "standalone",
-  "orientation": "portrait",
-  "scope": "/",
-  "start_url": "/index.html",
-  "background_color": "#121212",
-  "theme_color": "#2e7d32",
+  "name": "Meu Pomar Inteligente",
+  "description": "Sistema de Gestão Agrícola e Consórcios para o Extremo Sul da Bahia.",
+  "orientation": "any",
+  "scope": ".",
+  "short_name": "MeuPomar",
+  "start_url": ".",
+  "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "192-192.png",
-      "sizes": "192x192",
+      "src": "icon-192.png",
       "type": "image/png",
-      "purpose": "any"
+      "sizes": "192x192"
     },
     {
-      "src": "512-512.png",
-      "sizes": "512x512",
+      "src": "icon-512.png",
       "type": "image/png",
-      "purpose": "maskable"
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "share_target": {
+    "method": "GET"
+  }
 }
