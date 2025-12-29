@@ -505,17 +505,13 @@
         document.getElementById('data-plantio').value = getLocalDateString();
         renderAll();
     </script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log("Service Worker ativo!"))
-                .catch(err => console.log("Erro no SW:", err));
+        
         }
     </script>
-</body>
-        }
-    </script>
-</body>
-</html>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('Service Worker registrado', reg))
+    .catch(err => console.log('Erro ao registrar Service Worker', err));
         }
     </script>
 </body>
