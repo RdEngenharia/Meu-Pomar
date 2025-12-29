@@ -678,5 +678,12 @@
         document.getElementById('data-plantio').value = getLocalDateString();
         renderAll();
     </script>
+     <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/Meu-Pomar/sw.js')
+                .then(reg => console.log('Service Worker registrado', reg))
+                .catch(err => console.log('Erro no Service Worker', err));
+        } 
+            </script>
 </body>
 </html>
